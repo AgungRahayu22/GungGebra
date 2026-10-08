@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUNG GEBRA</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Three.js Library & OrbitControls CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Academic Serif & Times New Roman Styling -->
+    <style>
+        :root {
+            --bg-studio: #F8FAFC;
+            --card-bg: #FFFFFF;
+            --border-subtle: #E2E8F0;
+            --text-main: #0F172A;
+            --text-muted: #64748b;
+            --axis-x: #E11D48;
+            --axis-y: #2563EB;
+            --axis-z: #059669;
+            --tangent-plane: #F59E0B;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: var(--bg-studio);
+            color: var(--text-main);
+        }
+
+        .font-mono-code {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+
+        .studio-panel {
+            background: #ffffff;
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+        }
+
+        .glass-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+
+        .glass-card.active-step {
+            background: #ffffff;
+            border-color: var(--text-main);
+            box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1), 0 6px 16px rgba(15, 23, 42, 0.08);
+            transform: scale(1.01);
+        }
+
+        .btn-dark {
+            background-color: #0f172a;
+            color: #ffffff;
+            transition: all 0.2s;
+        }
+        .btn-dark:hover {
+            background-color: #1e293b;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2);
+        }
+
+        .btn-emerald {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .btn-emerald:hover {
+            background-color: #047857;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden select-none">
+
+    <!-- Left Sidebar: Interactive Control Panel & Step Guide -->
+    <aside class="w-full md:w-[480px] lg:w-[520px] h-1/2 md:h-full flex flex-col studio-panel z-10 border-b md:border-b-0 md:border-r">
+        
+        <!-- Header -->
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-white">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-800 shadow-sm">
+                    <i class="fa-solid fa-cube text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-slate-900 tracking-tight">GUNG GEBRA</h1>
+                    <p class="text-xs text-slate-500 font-medium">Visualisator Kalkulus Tangki 3D Interaktif</p>
+                </div>
+            </div>
+            <button onclick="setStep('ALL')" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 border border-slate-200 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-layer-group"></i> Tampilkan Semua
+            </button>
+        </div>
+
+        <!-- Scrollable Steps List -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-3" id="steps-container">
+
+            <!-- 3D Axes Guide Banner -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-2">
+                <div class="font-bold text-slate-800 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-compass text-slate-500"></i> Sumbu Koordinat & Skala Detail:</span>
+                    <span class="text-[10px] bg-white px-2 py-0.5 rounded border border-slate-200 font-mono text-slate-600 font-bold">Skala Detail 0.1</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 font-mono-code text-[11px] text-center">
+                    <div class="bg-rose-50 border border-rose-200 p-1 rounded text-rose-700 font-bold">
+                        <span class="block text-[9px] text-rose-500"></span>
+                       🔴 SUMBU X (Mendatar)
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 p-1 rounded text-blue-700 font-bold">
+                        <span class="block text-[9px] text-blue-500"></span>
+                       🔵 SUMBU Y (Kedalaman)
+                    </div>
+                    <div class="bg-emerald-50 border border-emerald-200 p-1 rounded text-emerald-700 font-bold">
+                        <span class="block text-[9px] text-emerald-500"></span> 
+                       🟢 SUMBU Z (Tinggi)
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP A CARD -->
+            <div id="card-step-a" onclick="setStep('A')" class="glass-card active-step p-3.5 rounded-xl cursor-pointer hover:border-slate-400 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-mono">a</span>
+                        Ketinggian Tangki di Titik P(2,3)
+                    </span>
+                    <span id="out-z0" class="text-xs font-mono-code font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">0.3500 m</span>
+                </div>
+                <p id="math-step-a" class="text-xs font-mono-code text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    z₀ = f(2, 3) = 0.02(2)² + 0.03(3)² = 0.35 m
+                </p>
+                <div class="text-[11px] text-emerald-700 leading-relaxed flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-play text-emerald-600"></i> Tiang naik dari alas z=0 ke permukaan z=0.35
+                </div>
+            </div>
+
+            <!-- STEP B CARD -->
+            <div id="card-step-b" onclick="setStep('B')" class="glass-card p-3.5 rounded-xl cursor-pointer hover:border-slate-400 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-mono">b</span>
+                        Turunan Parsial fₓ(2,3) & fᵧ(2,3)
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono-code">
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                        <span class="text-[10px] text-slate-500 block">Sumbu X (fₓ = 0.04x)</span>
+                        <span id="out-fx" class="font-bold text-rose-600 text-sm">0.0800</span>
+                    </div>
+                    <div class="bg-slate-50 p-2 rounded-lg border border-slate-200">
+                        <span class="text-[10px] text-slate-500 block">Sumbu Y (fᵧ = 0.06y)</span>
+                        <span id="out-fy" class="font-bold text-blue-600 text-sm">0.1800</span>
+                    </div>
+                </div>
+                <div class="text-[11px] text-slate-600 leading-relaxed flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-play text-slate-800"></i>Irisan kurva X & Y beserta vektor kemiringannya
+                </div>
+            </div>
+
+            <!-- STEP C CARD -->
+            <div id="card-step-c" onclick="setStep('C')" class="glass-card p-3.5 rounded-xl cursor-pointer hover:border-slate-400 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-mono">c</span>
+                        Arti Geometris Kemiringan (Slope)
+                    </span>
+                </div>
+                <div class="text-xs text-slate-700 space-y-1 bg-slate-50 p-2 rounded-lg border border-slate-200 font-medium">
+                    <p>• <strong class="text-rose-600">fₓ = 0.08</strong>: Melangkah 1m terhadap X dan tinggi akan naik +8 cm</p>
+                    <p>• <strong class="text-blue-600">fᵧ = 0.18</strong>: Melangkah 1m terhadap Y dan tinggi akan naik +18 cm</p>
+                </div>
+                <div class="text-[11px] text-slate-600 leading-relaxed flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-play text-slate-800"></i> Segitiga langkah kemiringan 
+                </div>
+            </div>
+
+            <!-- STEP D CARD -->
+            <div id="card-step-d" onclick="setStep('D')" class="glass-card p-3.5 rounded-xl cursor-pointer hover:border-slate-400 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-mono">d</span>
+                        Persamaan Bidang Singgung
+                    </span>
+                </div>
+                <div id="math-step-d" class="text-xs font-mono-code text-amber-700 bg-amber-50 p-2 rounded-lg border border-amber-200 font-bold">
+                    z = 0.08x + 0.18y - 0.35
+                </div>
+                <div class="text-[11px] text-slate-600 leading-relaxed flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid fa-play text-slate-800"></i> Mekar pada bidang singgung menyinggung titik P
+                </div>
+            </div>
+
+            <!-- STEP E CARD -->
+            <div id="card-step-e" onclick="setStep('E')" class="glass-card p-3.5 rounded-xl cursor-pointer hover:border-slate-400 space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-mono">e</span>
+                        Estimasi Q(2.1, 2.9) + Proyeksi Sumbu
+                    </span>
+                </div>
+                <div class="space-y-1 text-xs font-mono-code bg-slate-50 p-2 rounded-lg border border-slate-200">
+                    <div class="flex justify-between text-rose-600 font-bold">
+                        <span>Aproksimasi Bidang:</span>
+                        <span id="out-approx">0.3400 m</span>
+                    </div>
+                    <div class="flex justify-between text-emerald-700 font-bold">
+                        <span>Eksak Permukaan:</span>
+                        <span id="out-exact">0.3405 m</span>
+                    </div>
+                    <div class="flex justify-between text-slate-800 font-bold pt-1 border-t border-slate-200">
+                        <span>Galat Error (|Δz|):</span>
+                        <span id="out-error">0.0005 m</span>
+                    </div>
+                </div>
+                <div class="text-[11px] text-emerald-700 leading-relaxed flex items-center gap-1.5 font-semibold">
+                    <i class="fa-solid text-emerald-600"></i> Garis proyeksi menghubungkan langsung ke angka 2.1 (X) & 2.9 (Y)
+                </div>
+            </div>
+
+            <!-- Interactive Custom Parameter Accordion -->
+            <details class="glass-card p-3 rounded-xl space-y-3 group" open>
+                <summary class="text-xs font-bold text-slate-700 uppercase tracking-wider cursor-pointer flex justify-between items-center select-none">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-sliders text-slate-500"></i> Ubah Angka & Parameter Input</span>
+                    <i class="fa-solid fa-chevron-down text-xs transition group-open:rotate-180"></i>
+                </summary>
+                <div class="pt-2 space-y-3 border-t border-slate-200">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block mb-0.5">Koefisien a (x²)</label>
+                            <input type="number" id="input-a" step="0.01" value="0.02" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono-code text-slate-900 font-bold focus:outline-none focus:border-slate-800">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block mb-0.5">Koefisien b (y²)</label>
+                            <input type="number" id="input-b" step="0.01" value="0.03" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono-code text-slate-900 font-bold focus:outline-none focus:border-slate-800">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block">Titik P: x₀ = <span id="val-x0" class="text-rose-600">2.0</span></label>
+                            <input type="range" id="slider-x0" min="-4" max="4" step="0.1" value="2" class="w-full accent-rose-600">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block">Titik P: y₀ = <span id="val-y0" class="text-blue-600">3.0</span></label>
+                            <input type="range" id="slider-y0" min="-4" max="4" step="0.1" value="3" class="w-full accent-blue-600">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block">Titik Q: x₁ = <span id="val-x1" class="text-rose-600">2.1</span></label>
+                            <input type="range" id="slider-x1" min="-4" max="4" step="0.1" value="2.1" class="w-full accent-rose-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-600 font-bold block">Titik Q: y₁ = <span id="val-y1" class="text-blue-600">2.9</span></label>
+                            <input type="range" id="slider-y1" min="-4" max="4" step="0.1" value="2.9" class="w-full accent-blue-600">
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+        </div>
+    </aside>
+
+    <!-- Right Main 3D Canvas Area -->
+    <main class="flex-1 h-1/2 md:h-full relative bg-[#F8FAFC] overflow-hidden">
+        
+        <!-- 3D Canvas Container -->
+        <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+        <!-- Top Explanatory HUD Banner -->
+        <div id="hud-explanation" class="absolute top-4 left-4 right-4 md:right-auto md:max-w-lg studio-panel p-4 rounded-2xl text-xs z-10 space-y-2 shadow-xl border-l-4 border-l-slate-800 transition-all duration-300">
+            <div class="flex items-center justify-between">
+                <span id="hud-step-title" class="font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-bullseye text-slate-700"></i> Mode Visualisasi
+                </span>
+                <span id="hud-step-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-mono-code bg-slate-900 text-white font-bold">Langkah A</span>
+            </div>
+            
+            <p id="hud-step-desc" class="text-slate-700 font-medium leading-relaxed">
+                Menampilkan tiang Ketinggian z₀ = 0.35 meter dari titik koordinat dasar P(2, 3) di bidang X-Y naik lurus ke permukaan tangki.
+            </p>
+
+            <!-- Animation Progress Status Bar -->
+            <div class="pt-2 border-t border-slate-200 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 text-[11px]">
+                    <span id="anim-status-tag" class="font-bold text-emerald-700 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-play text-xs"></i> 
+                    </span>
+                </div>
+                
+            </div>
+            <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                <div id="anim-progress-bar" class="bg-slate-900 h-full w-0 transition-all duration-75"></div>
+            </div>
+        </div>
+
+        <!-- Camera Angle Quick View HUD -->
+        <div class="absolute bottom-4 left-4 studio-panel p-1.5 rounded-xl flex gap-1 z-10 text-xs shadow-lg">
+            <button onclick="setCameraView('perspective')" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-900 hover:text-white text-slate-800 font-bold border border-slate-200 transition flex items-center gap-1.5" title="Tampilan 3D Bebas">
+                <i class="fa-solid fa-cube text-slate-600"></i> <span class="hidden sm:inline">Perspektif 3D</span>
+            </button>
+            <button onclick="setCameraView('top')" class="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-900 hover:text-white text-slate-800 font-bold border border-slate-200 transition flex items-center gap-1.5" title="Tampak Atas (Proyeksi Skala)">
+                <i class="fa-solid fa-layer-group text-slate-600"></i> <span class="hidden sm:inline">Atas (Skala Exact)</span>
+            </button>
+            <button onclick="setCameraView('focusP')" class="px-2.5 py-1.5 rounded-lg btn-emerald text-white font-bold transition flex items-center gap-1.5" title="Fokus ke Titik P">
+                <i class="fa-solid fa-crosshairs"></i> <span class="hidden sm:inline">Fokus P</span>
+            </button>
+        </div>
+
+        <!-- Dynamic 3D Coordinates HUD Overlay -->
+        <div class="absolute bottom-4 right-4 studio-panel px-3.5 py-2 rounded-xl text-xs font-mono-code text-slate-800 z-10 flex items-center gap-3 shadow-lg">
+            <div><span class="text-slate-500 block text-[10px] font-sans font-bold">Posisi P:</span><span id="hud-pos-p" class="text-slate-900 font-bold">(2.0, 3.0, 0.35)</span></div>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <div><span class="text-slate-500 block text-[10px] font-sans font-bold">Posisi Q (Detail):</span><span id="hud-pos-q" class="text-rose-600 font-bold">(2.1, 2.9)</span></div>
+        </div>
+
+    </main>
+
+    <script>
+        /* Application State */
+        let state = {
+            a: 0.02,
+            b: 0.03,
+            x0: 2.0,
+            y0: 3.0,
+            x1: 2.1,
+            y1: 2.9,
+            activeStep: 'A',
+            animProgress: 0.0,
+            isAnimating: false,
+            animStartTime: 0,
+            animDuration: 1800
+        };
+
+        // Math Functions
+        function f(x, y) { return state.a * x * x + state.b * y * y; }
+        function df_dx(x, y) { return 2 * state.a * x; }
+        function df_dy(x, y) { return 2 * state.b * y; }
+
+        // Setup Three.js Scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Studio Light Background (#F8FAFC)
+        scene.background = new THREE.Color(0xF8FAFC);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight1.position.set(10, 20, 15);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0x94A3B8, 0.3);
+        dirLight2.position.set(-10, 10, -10);
+        scene.add(dirLight2);
+
+        // Ground Grid Helper (Clean Studio Grid)
+        const gridHelper = new THREE.GridHelper(10, 20, 0x94A3B8, 0xCBD5E1);
+        gridHelper.position.y = -0.002;
+        scene.add(gridHelper);
+
+        // Custom Colored Axes Helper Group
+        const axisGroup = new THREE.Group();
+        
+        // Arrow X (Rose Red #E11D48)
+        const arrowX = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 4.8, 0xE11D48, 0.25, 0.15);
+        axisGroup.add(arrowX);
+        
+        // Arrow Y (Royal Blue #2563EB)
+        const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 4.8, 0x2563EB, 0.25, 0.15);
+        axisGroup.add(arrowY);
+        
+        // Arrow Z (Emerald Green #059669)
+        const arrowZ = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 4.8, 0x059669, 0.25, 0.15);
+        axisGroup.add(arrowZ);
+
+        scene.add(axisGroup);
+
+        // Global Surface Mesh References & 3D Render Groups
+        let surfaceMesh = null;
+        let surfaceWireframe = null;
+
+        const sliceXGroup = new THREE.Group();
+        const sliceYGroup = new THREE.Group();
+        const tangentPlaneGroup = new THREE.Group();
+        const markersGroup = new THREE.Group();
+        const stepSpecificGroup = new THREE.Group();
+
+        scene.add(sliceXGroup);
+        scene.add(sliceYGroup);
+        scene.add(tangentPlaneGroup);
+        scene.add(markersGroup);
+        scene.add(stepSpecificGroup);
+
+        // Text Sprite Generator for 3D Canvas
+        function createTextSprite(text, colorHex, scaleX = 1.2, scaleY = 0.6, fontSize = 42, bgColor = null) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 384;
+            canvas.height = 192;
+            const ctx = canvas.getContext('2d');
+
+            if (bgColor) {
+                ctx.fillStyle = bgColor;
+                ctx.roundRect ? ctx.roundRect(10, 20, 364, 152, 16) : ctx.fillRect(10, 20, 364, 152);
+                ctx.fill();
+                ctx.strokeStyle = colorHex;
+                ctx.lineWidth = 6;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = colorHex;
+            ctx.font = `bold ${fontSize}px "Times New Roman", Times, serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 192, 96);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(scaleX, scaleY, 1);
+            return sprite;
+        }
+
+        // Add Main Floating Axis Labels
+        const labelX = createTextSprite('Sumbu X (m)', '#E11D48', 1.5, 0.75, 42);
+        labelX.position.set(5.2, 0.2, 0);
+        scene.add(labelX);
+
+        const labelY = createTextSprite('Sumbu Y (m)', '#2563EB', 1.5, 0.75, 42);
+        labelY.position.set(0, 0.2, 5.2);
+        scene.add(labelY);
+
+        const labelZ = createTextSprite('Tinggi Z (m)', '#059669', 1.5, 0.75, 42);
+        labelZ.position.set(0, 5.2, 0);
+        scene.add(labelZ);
+
+        // Group for Dynamic Ticks and Guideline Projections
+        const dynamicTicksGroup = new THREE.Group();
+        scene.add(dynamicTicksGroup);
+
+        // Add Granular Axis Ticks & Numbers
+        function renderAxesTicksAndNumbers() {
+            while(dynamicTicksGroup.children.length > 0) {
+                dynamicTicksGroup.remove(dynamicTicksGroup.children[0]);
+            }
+
+            // Origin Label (0)
+            const originSprite = createTextSprite('0', '#64748B', 0.5, 0.25, 36);
+            originSprite.position.set(-0.25, -0.2, -0.25);
+            dynamicTicksGroup.add(originSprite);
+
+            // X Axis Integer Ticks (-4 to +4)
+            for (let x = -4; x <= 4; x++) {
+                if (x === 0) continue;
+                const xSprite = createTextSprite(x.toString(), '#E11D48', 0.5, 0.25, 36);
+                xSprite.position.set(x, -0.25, 0);
+                dynamicTicksGroup.add(xSprite);
+
+                const tickGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(x, -0.08, 0),
+                    new THREE.Vector3(x, 0.08, 0)
+                ]);
+                dynamicTicksGroup.add(new THREE.Line(tickGeo, new THREE.LineBasicMaterial({ color: 0xE11D48, linewidth: 2 })));
+            }
+
+            // Y Axis Integer Ticks (-4 to +4)
+            for (let y = -4; y <= 4; y++) {
+                if (y === 0) continue;
+                const ySprite = createTextSprite(y.toString(), '#2563EB', 0.5, 0.25, 36);
+                ySprite.position.set(0, -0.25, y);
+                dynamicTicksGroup.add(ySprite);
+
+                const tickGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0, -0.08, y),
+                    new THREE.Vector3(0, 0.08, y)
+                ]);
+                dynamicTicksGroup.add(new THREE.Line(tickGeo, new THREE.LineBasicMaterial({ color: 0x2563EB, linewidth: 2 })));
+            }
+
+            // Z Axis Height Ticks (0.1m to 1.2m)
+            for (let zVal = 0.1; zVal <= 1.2; zVal += 0.1) {
+                const zValFixed = zVal.toFixed(1);
+                const isKey = Math.abs(zVal - 0.35) < 0.02 || Math.abs(zVal - 0.34) < 0.02;
+                const zSprite = createTextSprite(`${zValFixed}m`, isKey ? '#059669' : '#475569', isKey ? 0.8 : 0.6, 0.3, isKey ? 40 : 32);
+                zSprite.position.set(-0.35, zVal, 0);
+                dynamicTicksGroup.add(zSprite);
+
+                const tickGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(-0.06, zVal, 0),
+                    new THREE.Vector3(0.06, zVal, 0)
+                ]);
+                dynamicTicksGroup.add(new THREE.Line(tickGeo, new THREE.LineBasicMaterial({ color: 0x059669 })));
+            }
+
+            // Highlight X-Axis specific numbers: x0 & x1
+            const x0 = state.x0, y0 = state.y0;
+            const x1 = state.x1, y1 = state.y1;
+
+            const spriteX0 = createTextSprite(`x₀=${x0.toFixed(1)}`, '#E11D48', 0.9, 0.4, 38, '#FFFFFF');
+            spriteX0.position.set(x0, -0.4, 0);
+            dynamicTicksGroup.add(spriteX0);
+
+            if (Math.abs(x1 - x0) > 0.01) {
+                const spriteX1 = createTextSprite(`x₁=${x1.toFixed(1)}`, '#BE123C', 0.9, 0.4, 38, '#F8FAFC');
+                spriteX1.position.set(x1, -0.4, -0.3);
+                dynamicTicksGroup.add(spriteX1);
+            }
+
+            // Highlight Y-Axis specific numbers: y0 & y1
+            const spriteY0 = createTextSprite(`y₀=${y0.toFixed(1)}`, '#2563EB', 0.9, 0.4, 38, '#FFFFFF');
+            spriteY0.position.set(0, -0.4, y0);
+            dynamicTicksGroup.add(spriteY0);
+
+            if (Math.abs(y1 - y0) > 0.01) {
+                const spriteY1 = createTextSprite(`y₁=${y1.toFixed(1)}`, '#1D4ED8', 0.9, 0.4, 38, '#F8FAFC');
+                spriteY1.position.set(-0.3, -0.4, y1);
+                dynamicTicksGroup.add(spriteY1);
+            }
+
+            // Projection Guidelines
+            const pGuideMat = new THREE.LineDashedMaterial({ color: 0x475569, dashSize: 0.1, gapSize: 0.05 });
+            
+            const linePX = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x0, 0, y0), new THREE.Vector3(x0, 0, 0)]),
+                pGuideMat
+            );
+            linePX.computeLineDistances();
+            dynamicTicksGroup.add(linePX);
+
+            const linePY = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x0, 0, y0), new THREE.Vector3(0, 0, y0)]),
+                pGuideMat
+            );
+            linePY.computeLineDistances();
+            dynamicTicksGroup.add(linePY);
+
+            const qGuideMat = new THREE.LineDashedMaterial({ color: 0xE11D48, dashSize: 0.08, gapSize: 0.04 });
+
+            const lineQX = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1, 0, y1), new THREE.Vector3(x1, 0, 0)]),
+                qGuideMat
+            );
+            lineQX.computeLineDistances();
+            dynamicTicksGroup.add(lineQX);
+
+            const lineQY = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1, 0, y1), new THREE.Vector3(0, 0, y1)]),
+                qGuideMat
+            );
+            lineQY.computeLineDistances();
+            dynamicTicksGroup.add(lineQY);
+
+            const lineQVert = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x1, 0, y1), new THREE.Vector3(x1, f(x1, y1), y1)]),
+                new THREE.LineDashedMaterial({ color: 0x059669, dashSize: 0.05, gapSize: 0.03 })
+            );
+            lineQVert.computeLineDistances();
+            dynamicTicksGroup.add(lineQVert);
+        }
+
+        // Surface Gradient Palette
+        function getHeightColor(z) {
+            const norm = Math.min(Math.max(z / 1.0, 0), 1);
+            const color = new THREE.Color();
+            // Gradient Sky Blue (#0EA5E9) to Royal Blue (#1E3A8A)
+            color.lerpColors(new THREE.Color(0x38BDF8), new THREE.Color(0x1E3A8A), norm);
+            return color;
+        }
+
+        // Surface Mesh
+        function createSurfaceMesh() {
+            if (surfaceMesh) scene.remove(surfaceMesh);
+            if (surfaceWireframe) scene.remove(surfaceWireframe);
+
+            const gridExtent = 6;
+            const gridSubdiv = 50;
+            const geometry = new THREE.PlaneGeometry(gridExtent, gridExtent, gridSubdiv, gridSubdiv);
+            geometry.rotateX(-Math.PI / 2);
+
+            const pos = geometry.attributes.position;
+            const colors = new Float32Array(pos.count * 3);
+
+            for (let i = 0; i < pos.count; i++) {
+                const x = pos.getX(i);
+                const y = pos.getZ(i);
+                const z = f(x, y);
+                pos.setY(i, z);
+
+                const c = getHeightColor(z);
+                colors[i * 3] = c.r;
+                colors[i * 3 + 1] = c.g;
+                colors[i * 3 + 2] = c.b;
+            }
+
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+
+            const material = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                roughness: 0.3,
+                metalness: 0.05,
+                transparent: true,
+                opacity: (state.activeStep === 'D' || state.activeStep === 'E') ? 0.75 : 0.88
+            });
+
+            surfaceMesh = new THREE.Mesh(geometry, material);
+            scene.add(surfaceMesh);
+
+            const wireMat = new THREE.MeshBasicMaterial({
+                color: 0x64748B,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.12
+            });
+            surfaceWireframe = new THREE.Mesh(geometry, wireMat);
+            scene.add(surfaceWireframe);
+        }
+
+        // Tangent Plane creation (Amber/Gold #F59E0B)
+        function updateAll() {
+            state.a = parseFloat(document.getElementById('input-a').value) || 0;
+            state.b = parseFloat(document.getElementById('input-b').value) || 0;
+            state.x0 = parseFloat(document.getElementById('slider-x0').value);
+            state.y0 = parseFloat(document.getElementById('slider-y0').value);
+            state.x1 = parseFloat(document.getElementById('slider-x1').value);
+            state.y1 = parseFloat(document.getElementById('slider-y1').value);
+
+            createSurfaceMesh();
+            renderAxesTicksAndNumbers();
+
+            const x0 = state.x0, y0 = state.y0;
+            const z0 = f(x0, y0);
+            const fx = df_dx(x0, y0);
+            const fy = df_dy(x0, y0);
+
+            const x1 = state.x1, y1 = state.y1;
+            const zExact = f(x1, y1);
+            const zApprox = z0 + fx * (x1 - x0) + fy * (y1 - y0);
+            const error = Math.abs(zExact - zApprox);
+
+            const t = state.animProgress;
+
+            // UI Elements Update
+            document.getElementById('val-x0').innerText = x0.toFixed(1);
+            document.getElementById('val-y0').innerText = y0.toFixed(1);
+            document.getElementById('val-x1').innerText = x1.toFixed(1);
+            document.getElementById('val-y1').innerText = y1.toFixed(1);
+
+            document.getElementById('out-z0').innerText = `${z0.toFixed(4)} m`;
+            document.getElementById('math-step-a').innerText = `z₀ = ${state.a}(${x0.toFixed(1)})² + ${state.b}(${y0.toFixed(1)})² = ${z0.toFixed(4)} m`;
+
+            document.getElementById('out-fx').innerText = fx.toFixed(4);
+            document.getElementById('out-fy').innerText = fy.toFixed(4);
+
+            const constTerm = z0 - fx * x0 - fy * y0;
+            const signConst = constTerm >= 0 ? `+ ${constTerm.toFixed(4)}` : `- ${Math.abs(constTerm).toFixed(4)}`;
+            document.getElementById('math-step-d').innerText = `z = ${fx.toFixed(2)}x + ${fy.toFixed(2)}y ${signConst}`;
+
+            document.getElementById('out-approx').innerText = `${zApprox.toFixed(4)} m`;
+            document.getElementById('out-exact').innerText = `${zExact.toFixed(4)} m`;
+            document.getElementById('out-error').innerText = `${error.toFixed(4)} m`;
+
+            document.getElementById('hud-pos-p').innerText = `(${x0.toFixed(1)}, ${y0.toFixed(1)}, ${z0.toFixed(2)})`;
+            document.getElementById('hud-pos-q').innerText = `(${x1.toFixed(1)}, ${y1.toFixed(1)})`;
+
+            // Animation Progress Bar
+            document.getElementById('anim-progress-bar').style.width = `${(t * 100).toFixed(1)}%`;
+            const statusTag = document.getElementById('anim-status-tag');
+            if (t >= 1.0) {
+                statusTag.className = "font-bold text-[#0D530E] flex items-center gap-1";
+                statusTag.innerHTML = `<i class="fa-solid fa-circle-check text-xs"></i> `;
+            } else {
+                statusTag.className = "font-bold text-[#007979] flex items-center gap-1";
+                statusTag.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i>  (${(t*100).toFixed(0)}%)`;
+            }
+
+            // Clear Dynamic Render Groups
+            [sliceXGroup, sliceYGroup, tangentPlaneGroup, markersGroup, stepSpecificGroup].forEach(g => {
+                while(g.children.length > 0) g.remove(g.children[0]);
+            });
+
+            // 1. Point P Sphere
+            const pCurrentZ = (state.activeStep === 'A') ? (z0 * t) : z0;
+            const sphereP = new THREE.Mesh(
+                new THREE.SphereGeometry(0.1, 32, 32),
+                new THREE.MeshStandardMaterial({ color: 0x007979, roughness: 0.2 })
+            );
+            sphereP.position.set(x0, pCurrentZ, y0);
+            markersGroup.add(sphereP);
+
+            // Point P Ground Base Marker
+            const sphereP0 = new THREE.Mesh(
+                new THREE.SphereGeometry(0.07, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0x0D530E })
+            );
+            sphereP0.position.set(x0, 0, y0);
+            stepSpecificGroup.add(sphereP0);
+
+            // 2. STEP A: Height Pillar
+            const heightPillarGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(x0, 0, y0),
+                new THREE.Vector3(x0, z0 * t, y0)
+            ]);
+            const heightPillar = new THREE.Line(heightPillarGeo, new THREE.LineBasicMaterial({ color: 0x0D530E, linewidth: 4 }));
+            stepSpecificGroup.add(heightPillar);
+
+            // 3. STEP B & C: Slice Curves
+            const rangeX = (state.activeStep === 'B' || state.activeStep === 'C') ? (0.1 + 2.9 * t) : 3.0;
+            
+            // Slice X Curve
+            const curveXPoints = [];
+            for (let x = x0 - rangeX; x <= x0 + rangeX; x += 0.1) {
+                curveXPoints.push(new THREE.Vector3(x, f(x, y0), y0));
+            }
+            sliceXGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curveXPoints), new THREE.LineBasicMaterial({ color: 0xe11d48, linewidth: 3 })));
+
+            // Slice Y Curve
+            const curveYPoints = [];
+            for (let y = y0 - rangeX; y <= y0 + rangeX; y += 0.1) {
+                curveYPoints.push(new THREE.Vector3(x0, f(x0, y), y));
+            }
+            sliceYGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(curveYPoints), new THREE.LineBasicMaterial({ color: 0x007979, linewidth: 3 })));
+
+            // Tangent Vector Arrows
+            const arrowLenX = 1.2 * Math.max(t, 0.1);
+            sliceXGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1, fx, 0).normalize(), new THREE.Vector3(x0, z0, y0), arrowLenX, 0xe11d48, 0.25, 0.15));
+            sliceYGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0, fy, 1).normalize(), new THREE.Vector3(x0, z0, y0), arrowLenX, 0x007979, 0.25, 0.15));
+
+            // 4. STEP C: Slope Triangles
+            if (state.activeStep === 'C' || state.activeStep === 'ALL') {
+                const stepT_X = Math.min(t * 2, 1.0);
+                const stepT_Y = Math.max(0, (t - 0.5) * 2);
+
+                if (stepT_X > 0) {
+                    const slopeXGeo = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(x0, z0, y0),
+                        new THREE.Vector3(x0 + 1.0 * stepT_X, z0, y0),
+                        new THREE.Vector3(x0 + 1.0 * stepT_X, z0 + fx * stepT_X, y0),
+                        new THREE.Vector3(x0, z0, y0)
+                    ]);
+                    const slopeXLine = new THREE.Line(slopeXGeo, new THREE.LineDashedMaterial({ color: 0xe11d48, dashSize: 0.08, gapSize: 0.04 }));
+                    slopeXLine.computeLineDistances();
+                    stepSpecificGroup.add(slopeXLine);
+                }
+
+                if (stepT_Y > 0) {
+                    const slopeYGeo = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(x0, z0, y0),
+                        new THREE.Vector3(x0, z0, y0 + 1.0 * stepT_Y),
+                        new THREE.Vector3(x0, z0 + fy * stepT_Y, y0 + 1.0 * stepT_Y),
+                        new THREE.Vector3(x0, z0, y0)
+                    ]);
+                    const slopeYLine = new THREE.Line(slopeYGeo, new THREE.LineDashedMaterial({ color: 0x007979, dashSize: 0.08, gapSize: 0.04 }));
+                    slopeYLine.computeLineDistances();
+                    stepSpecificGroup.add(slopeYLine);
+                }
+            }
+
+            // 5. STEP D & E: Tangent Plane (Amber Gold #F59E0B)
+            const planeExtent = (state.activeStep === 'D') ? (3.5 * t) : 3.5;
+            if (planeExtent > 0.05) {
+                const planeGeo = new THREE.PlaneGeometry(planeExtent, planeExtent, 10, 10);
+                planeGeo.rotateX(-Math.PI / 2);
+
+                const pPos = planeGeo.attributes.position;
+                for (let i = 0; i < pPos.count; i++) {
+                    const px = pPos.getX(i);
+                    const py = pPos.getZ(i);
+                    pPos.setY(i, z0 + fx * px + fy * py);
+                }
+                planeGeo.computeVertexNormals();
+
+                const planeMesh = new THREE.Mesh(planeGeo, new THREE.MeshPhongMaterial({
+                    color: 0xF59E0B,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.55 * Math.min(t + 0.2, 1.0),
+                    shininess: 80
+                }));
+                planeMesh.position.set(x0, 0, y0);
+                tangentPlaneGroup.add(planeMesh);
+            }
+
+            // 6. STEP E: Projection Spheres & Error Line for Point Q
+            if (state.activeStep === 'E' || state.activeStep === 'ALL') {
+                const beamT = Math.min(t * 1.5, 1.0);
+
+                // Q Base Ground Marker
+                const qBase = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), new THREE.MeshBasicMaterial({ color: 0xe11d48 }));
+                qBase.position.set(x1, 0, y1);
+                stepSpecificGroup.add(qBase);
+
+                // Q Label Sprite in 3D Space
+                const qLabelSprite = createTextSprite(`Q(${x1.toFixed(1)}, ${y1.toFixed(1)})`, '#e11d48', 1.1, 0.5, 36, '#FFFFFF');
+                qLabelSprite.position.set(x1 + 0.4, 0.1, y1 + 0.3);
+                stepSpecificGroup.add(qLabelSprite);
+
+                // Q Approx Sphere
+                const qApproxSphere = new THREE.Mesh(new THREE.SphereGeometry(0.09, 24, 24), new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.2 }));
+                qApproxSphere.position.set(x1, zApprox * beamT, y1);
+                stepSpecificGroup.add(qApproxSphere);
+
+                // Q Exact Sphere
+                const qExactSphere = new THREE.Mesh(new THREE.SphereGeometry(0.09, 24, 24), new THREE.MeshStandardMaterial({ color: 0x0D530E, roughness: 0.2 }));
+                qExactSphere.position.set(x1, zExact * beamT, y1);
+                stepSpecificGroup.add(qExactSphere);
+
+                if (t > 0.5) {
+                    const errorGeo = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(x1, zExact, y1),
+                        new THREE.Vector3(x1, zApprox, y1)
+                    ]);
+                    stepSpecificGroup.add(new THREE.Line(errorGeo, new THREE.LineBasicMaterial({ color: 0xe11d48, linewidth: 5 })));
+                }
+            }
+
+            applyStepVisibility();
+        }
+
+        function applyStepVisibility() {
+            const step = state.activeStep;
+
+            ['a', 'b', 'c', 'd', 'e'].forEach(s => {
+                const card = document.getElementById(`card-step-${s}`);
+                if (step === s.toUpperCase()) card.classList.add('active-step');
+                else card.classList.remove('active-step');
+            });
+
+            if (step === 'A') {
+                sliceXGroup.visible = false;
+                sliceYGroup.visible = false;
+                tangentPlaneGroup.visible = false;
+                stepSpecificGroup.visible = true;
+
+                updateHUD('Soal a: Ketinggian Tangki z₀', 'Langkah A', 
+                    `Tiang hijau tumbuh dari alas (z=0) ke permukaan P(${state.x0}, ${state.y0}). Ketinggian presisi = ${f(state.x0, state.y0).toFixed(4)} meter.`);
+
+            } else if (step === 'B') {
+                sliceXGroup.visible = true;
+                sliceYGroup.visible = true;
+                tangentPlaneGroup.visible = false;
+                stepSpecificGroup.visible = false;
+
+                updateHUD('Soal b: Turunan Parsial fₓ & fᵧ', 'Langkah B', 
+                    `Garis MERAH = Irisan Sumbu X (fₓ = ${df_dx(state.x0, state.y0).toFixed(4)}). Garis TEAL = Irisan Sumbu Y (fᵧ = ${df_dy(state.x0, state.y0).toFixed(4)}).`);
+
+            } else if (step === 'C') {
+                sliceXGroup.visible = true;
+                sliceYGroup.visible = true;
+                tangentPlaneGroup.visible = false;
+                stepSpecificGroup.visible = true;
+
+                updateHUD('Soal c: Arti Geometris Kemiringan', 'Langkah C', 
+                    `Langkah 1m ke X dan untuk permukaan naik ${(df_dx(state.x0, state.y0)*100).toFixed(1)} cm. Langkah 1m ke Y dan untuk permukaan naik ${(df_dy(state.x0, state.y0)*100).toFixed(1)} cm.`);
+
+            } else if (step === 'D') {
+                sliceXGroup.visible = false;
+                sliceYGroup.visible = false;
+                tangentPlaneGroup.visible = true;
+                stepSpecificGroup.visible = false;
+
+                updateHUD('Soal d: Persamaan Bidang Singgung', 'Langkah D', 
+                    `Bidang Datar Teal mekar menyinggung titik P. Persamaan: z = ${df_dx(state.x0, state.y0).toFixed(2)}x + ${df_dy(state.x0, state.y0).toFixed(2)}y - ${(f(state.x0, state.y0) - df_dx(state.x0, state.y0)*state.x0 - df_dy(state.x0, state.y0)*state.y0).toFixed(2)}.`);
+
+            } else if (step === 'E') {
+                sliceXGroup.visible = false;
+                sliceYGroup.visible = false;
+                tangentPlaneGroup.visible = true;
+                stepSpecificGroup.visible = true;
+
+                const zExact = f(state.x1, state.y1);
+                const zApprox = f(state.x0, state.y0) + df_dx(state.x0, state.y0)*(state.x1-state.x0) + df_dy(state.x0, state.y0)*(state.y1-state.y0);
+
+                updateHUD('Soal e: Estimasi Q(2.1, 2.9) + Proyeksi', 'Langkah E', 
+                    `Garis putus-putus menghubungkan posisi Q ke angka 2.1 di Sumbu X dan 2.9 di Sumbu Y secara akurat! Estimasi = ${zApprox.toFixed(4)}m | Eksak = ${zExact.toFixed(4)}m.`);
+
+            } else {
+                sliceXGroup.visible = true;
+                sliceYGroup.visible = true;
+                tangentPlaneGroup.visible = true;
+                stepSpecificGroup.visible = true;
+
+                updateHUD('Semua Elemen Visual Aktif', 'Mode Lengkap', 
+                    `Seluruh elemen visual ditampilkan bersamaan dalam skema warna terang & presisi skala tinggi.`);
+            }
+        }
+
+        function updateHUD(title, badge, desc) {
+            document.getElementById('hud-step-title').innerHTML = `<i class="fa-solid fa-bullseye text-[#24B1B1]"></i> ${title}`;
+            document.getElementById('hud-step-badge').innerText = badge;
+            document.getElementById('hud-step-desc').innerText = desc;
+        }
+
+        // Smooth Camera Transition Logic
+        let targetCamPos = new THREE.Vector3(7, 6, 8);
+        let targetCamLook = new THREE.Vector3(0, 0.2, 0);
+        let isAnimatingCamera = false;
+
+        function animateCameraTo(px, py, pz, tx, ty, tz) {
+            targetCamPos.set(px, py, pz);
+            targetCamLook.set(tx, ty, tz);
+            isAnimatingCamera = true;
+        }
+
+        function setStep(step) {
+            state.activeStep = step;
+            startStepAnimation();
+
+            if (step === 'A') {
+                animateCameraTo(state.x0 + 2.5, f(state.x0, state.y0) + 1.8, state.y0 + 2.5, state.x0, f(state.x0, state.y0), state.y0);
+            } else if (step === 'B') {
+                animateCameraTo(state.x0 + 3.2, f(state.x0, state.y0) + 2.2, state.y0 + 1.2, state.x0, f(state.x0, state.y0), state.y0);
+            } else if (step === 'C') {
+                animateCameraTo(state.x0 + 2.0, f(state.x0, state.y0) + 1.2, state.y0 + 2.8, state.x0 + 0.5, f(state.x0, state.y0), state.y0 + 0.5);
+            } else if (step === 'D') {
+                animateCameraTo(state.x0 + 3.5, f(state.x0, state.y0) + 2.8, state.y0 + 3.5, state.x0, f(state.x0, state.y0), state.y0);
+            } else if (step === 'E') {
+                const zExact = f(state.x1, state.y1);
+                animateCameraTo(state.x1 + 1.8, zExact + 1.2, state.y1 + 1.8, state.x1, zExact, state.y1);
+            } else {
+                animateCameraTo(6, 5, 7, 0, 0.2, 0);
+            }
+        }
+
+        function startStepAnimation() {
+            state.animProgress = 0.0;
+            state.isAnimating = true;
+            state.animStartTime = performance.now();
+        }
+
+        function replayCurrentStepAnimation() {
+            startStepAnimation();
+        }
+
+        function setCameraView(view) {
+            if (view === 'perspective') {
+                animateCameraTo(6, 5, 7, 0, 0.2, 0);
+            } else if (view === 'top') {
+                animateCameraTo(2.1, 8.5, 2.9, 2.1, 0, 2.9);
+            } else if (view === 'focusP') {
+                const z0 = f(state.x0, state.y0);
+                animateCameraTo(state.x0 + 2.5, z0 + 1.8, state.y0 + 2.5, state.x0, z0, state.y0);
+            }
+        }
+
+        // Attach Input Handlers
+        ['input-a', 'input-b', 'slider-x0', 'slider-y0', 'slider-x1', 'slider-y1'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                updateAll();
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Main Animation Loop
+        function animate(now) {
+            requestAnimationFrame(animate);
+
+            if (state.isAnimating) {
+                const elapsed = now - state.animStartTime;
+                state.animProgress = Math.min(elapsed / state.animDuration, 1.0);
+                if (state.animProgress >= 1.0) {
+                    state.isAnimating = false;
+                }
+                updateAll();
+            }
+
+            if (isAnimatingCamera) {
+                camera.position.lerp(targetCamPos, 0.08);
+                controls.target.lerp(targetCamLook, 0.08);
+                if (camera.position.distanceTo(targetCamPos) < 0.02) {
+                    isAnimatingCamera = false;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            setStep('A');
+            animate(performance.now());
+        };
+    </script>
+</body>
+</html>
